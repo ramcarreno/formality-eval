@@ -1,0 +1,7 @@
+[project]
+name = "formality-eval"
+version = "2025.03.01"
+authors = [{name = "Ramón Carreño", email = "ramcv98@gmail.com"}]
+dependencies = ["datasets", "torch", "transformers",]
+readme = "README.md"
+license = {text = "GNU AGPLv3"}
