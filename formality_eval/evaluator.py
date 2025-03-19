@@ -5,11 +5,15 @@ from formality_eval.models import FormalityModel
 
 class Evaluator:
     def __init__(self, model, test_set):
-        self.model: FormalityModel = model  # TODO: use own model classes!
+        self.model: FormalityModel = model
         self.dataset: datasets.Dataset = test_set  # use always test set for evaluations
-        self.metrics()
-        self.domain_distribution()
-        self.pretty_print()
+        self.evaluate()
+        # self.metrics()
+        # self.domain_distribution()
+        # self.pretty_print()
+
+    def evaluate(self):
+        self.model.predict("This is not working properly.")
 
     def metrics(self):  # TODO: own module + class?
         pass
