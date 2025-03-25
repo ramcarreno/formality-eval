@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, List
 
 import datasets
 import torch
+from tqdm import tqdm
 from transformers import PreTrainedTokenizer, AutoTokenizer, AutoModelForSequenceClassification
 
 
@@ -40,23 +41,28 @@ class EmbeddingsBased(FormalityModel):
         pass
 
 class Pretrained(FormalityModel):
-    """Leverage a pretrained AutoModelForClassification model for formality."""
-    def __init__(self, model_name: str):
+    """Leverage a pretrained AutoModelForClassification model for the formality detection task."""
+    def __init__(self, model_name: str, batch_size_eval: int):
+        self.batch_size_eval: int = batch_size_eval
         self.model = AutoModelForSequenceClassification.from_pretrained(model_name)
-        self.tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained(model_name)
 
     def predict(self, sentence: str) -> dict[str, Any]:
-        input_ids = self.tokenizer(sentence, add_special_tokens=True, return_token_type_ids=True, truncation=True,
-                                   padding="max_length", return_tensors="pt")
-        outputs = self.model(**input_ids)
+        # TODO: single sample prediction
+        return
 
-        id2formality = {0: "formal", 1: "informal"}
+    # TODO: have fun with this tomorrow, set a batch size, etc.
+    def batch_predict(self, test_set: datasets.Dataset) -> list[int]:
+        """Perform batch prediction on a dataset containing a 'text' column."""
+        input_ids = test_set["input_ids"]
+        attention_mask = test_set["attention_mask"]
+        preds_batch: list[int] = []
 
-        formality_scores = [
-            {id2formality[idx]: score for idx, score in enumerate(text_scores.tolist())}
-            for text_scores in outputs.logits.softmax(dim=1)
-        ]
-        return formality_scores  # TODO: single prediction vs batch prediction
+        for i in tqdm(range(0, len(input_ids), self.batch_size_eval), desc="Evaluating batches..."):
+            input_batch = {
+                "input_ids": torch.tensor(input_ids[i:i + self.batch_size_eval]),
+                "attention_mask": torch.tensor(attention_mask[i:i + self.batch_size_eval])
+            }
+            output_batch = self.model(**input_batch)
+            preds_batch.extend(output_batch.logits.softmax(dim=1).argmax(dim=1).tolist())  # decode outputs
 
-    def batch_predict(self, test_set: datasets.Dataset):
-        pass
+        return preds_batch
