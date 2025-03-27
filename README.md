@@ -28,13 +28,13 @@ _dataset.py_ module as well.
 - `predict`: Single sentence prediction mode. Specify here a sentence and it will return the probability it gets
 classified as **formal** or **informal**.
 - `formal_label` and `informal_label`: In certain cases, one might want to change the labels associated with both
-predictions, as some models might use {-1,1}, {0,1}, etc. For formal and informal respectively. By default, 
+predictions, as some other models might use {-1,1}, {0,1}, etc. for informal and formal respectively. By default, 
 _formal_label_ is set to 0, and _informal_label_ is set to 1, as it is how the baseline rule-based model encodes 
 both.
 
 More specifics about models and datasets are detailed in the document.
 
-### Example run: Classification report
+### Example: Classification report
 ```
 python -m formality_eval --model="rule-based"
 ```
@@ -49,7 +49,7 @@ Assuming the default dataset was used, it should return the following report:
    macro avg       0.67      0.64      0.63      2000
 weighted avg       0.67      0.64      0.63      2000
 ```
-### Example run: Predicting formality for a sentence
+### Example: Predicting formality for a sentence
 ```
 python -m formality_eval --model="s-nlp/xlmr_formality_classifier" --predict="Salutations, fellow reviewer."
 ```

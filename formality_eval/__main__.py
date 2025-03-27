@@ -31,7 +31,7 @@ def evaluate(model_name: str, dataset_name: str, predict_sample: str,
     if model_name == "rule-based":
         model = RuleBased()
     elif model_name == "embeddings":
-        model = EmbeddingsBased()
+        model = EmbeddingsBased(train_set=dataset.processed_data["train"])
     else:  # whatever AutoModelForSequenceClassification for formality detection!
         model = Pretrained(model_name=model_name, batch_size_eval=16)
         # options:

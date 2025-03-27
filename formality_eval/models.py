@@ -2,9 +2,13 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 import datasets
+import fasttext
+import numpy as np
 import torch
+import tempfile
+from sklearn.linear_model import LogisticRegression
 from tqdm import tqdm
-from transformers import AutoModelForSequenceClassification, AutoTokenizer
+from transformers import AutoModelForSequenceClassification, AutoTokenizer, PreTrainedTokenizer
 
 
 class FormalityModel(ABC):
@@ -15,7 +19,7 @@ class FormalityModel(ABC):
     """
 
     @abstractmethod
-    def predict(self, sentence: str) -> dict[str, Any]:
+    def predict(self, sentence: str) -> dict[str, float]:
         """
         Returns the probability of being predicted as either formal or informal for a single sentence.
 
@@ -45,7 +49,7 @@ class RuleBased(FormalityModel):
     A Study of Text Classification Approaches'. Can be expanded to check for more linguistic rules, wordlists, etc.
     Inherits from the FormalityModel abstract base class.
     """
-    def predict(self, sentence: str) -> dict[str, Any]:
+    def predict(self, sentence: str) -> dict[str, float]:
         """
         Being a rule-based model, 'prediction' always returns deterministic results.
         """
@@ -59,15 +63,44 @@ class RuleBased(FormalityModel):
 
 class EmbeddingsBased(FormalityModel):
     """
-    Model based in Word2Vec embeddings.
+    Simple formality classifier based on FastText embeddings.
     Inherits from the FormalityModel abstract base class.
     """
+    def __init__(self, train_set: datasets.Dataset):
+        """
+        Args:
+            train_set(datasets.Dataset):
+                Training split of the dataset.
+        """
+        # format HF dataset to FastText-compatible training data (must contain label next to __label__ text)
+        train_data: list[str] = [f"__label__{label} {text}" for text, label in
+                      zip(train_set["text"], train_set["label"])]
 
-    def predict(self, sentence: str) -> dict[str, Any]:
-        pass
+        # write data to a temp file since FastText expects files for training
+        with tempfile.NamedTemporaryFile(mode="w", delete=False) as temp_file:
+            temp_file.writelines("\n".join(train_data))
+            temp_path = temp_file.name
 
-    def predict_set(self, test_set: datasets.Dataset):
-        pass
+        # train FastText model to encode sentences into embedding vectors and convert them into such
+        self.embedder_model = fasttext.train_supervised(temp_path, epoch=10, lr=0.5, wordNgrams=2, dim=300)
+        embedded_sentences: np.ndarray = np.array([self.sentence_to_embedding(text) for text in train_set["text"]])
+        labels: np.ndarray = np.array(train_set["label"])  # for this model, always formal=0, informal=1
+
+        # train a sklearn logistic regression classifier
+        self.model: LogisticRegression = LogisticRegression().fit(embedded_sentences, labels)
+
+    def sentence_to_embedding(self, sentence: str) -> np.ndarray:
+        """
+        Converts a sentence to a FastText embeddings vector.
+        """
+        return self.embedder_model.get_sentence_vector(sentence)
+
+    def predict(self, sentence: str) -> dict[str, float]:
+        output = self.model.predict_proba(self.sentence_to_embedding(sentence).reshape(1, -1))[0]
+        return {"formal": float(output[0]), "informal": float(output[1])}  # returns predictions in order of labels
+
+    def predict_set(self, test_set: datasets.Dataset) -> list[int]:
+        return self.model.predict(np.array([self.sentence_to_embedding(text) for text in test_set["text"]])).tolist()
 
 
 class Pretrained(FormalityModel):
@@ -87,9 +120,9 @@ class Pretrained(FormalityModel):
         self.batch_size_eval: int = batch_size_eval
         self.model_name = model_name
         self.model = AutoModelForSequenceClassification.from_pretrained(model_name)
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
+        self.tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained(model_name)
 
-    def predict(self, sentence: str) -> dict[str, Any]:
+    def predict(self, sentence: str) -> dict[str, float]:
         tokenized_sentence = self.tokenizer(
             sentence,
             add_special_tokens=True,

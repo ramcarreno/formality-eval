@@ -2,7 +2,6 @@ from typing import Any
 
 import datasets
 from sklearn.metrics import precision_recall_fscore_support, accuracy_score, classification_report
-from sympy.codegen.ast import Raise
 
 from formality_eval.models import FormalityModel, Pretrained
 
@@ -76,5 +75,4 @@ class Evaluator:
                 pps for pps in prediction_probs
                 if abs(pps["formal"] - pps["informal"]) < uncertainty_threshold
             ]
-        else:
-            raise NotImplementedError("Probability prediction is not implemented for this model type.")
+        raise NotImplementedError("Probability prediction is not implemented for this model type.")

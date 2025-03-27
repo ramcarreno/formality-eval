@@ -89,10 +89,10 @@ class DatasetProcessor:
             # normalize output to 'label' from annotations
             normalized_score = round((sample["avg_score"] - (-3)) / (3 - (-3)) * (1 - (-1)) + (-1), 2)
             sample["norm_score"] = normalized_score
-            sample["label"] = self.informal_label if normalized_score <= 0 else self.formal_label
+            sample["label"] = self.informal_label if sample["avg_score"] <= 0 else self.formal_label
         # add your dataset processing rules HERE!
 
-        # pre-tokenize dataset for pretrained models # TODO: reconsider tokenizing each evaluation batch instead
+        # pre-tokenize dataset for pretrained models
         if self.tokenizer is not None:
             tokenized = self.tokenizer(
                 sample["text"],
