@@ -1,3 +1,4 @@
+import csv
 from typing import Any
 
 import datasets
@@ -7,16 +8,22 @@ from formality_eval.models import FormalityModel, Pretrained
 
 
 class Evaluator:
-    def __init__(self, model: FormalityModel, test_set: datasets.Dataset):
+    def __init__(self, model: FormalityModel, test_set: datasets.Dataset, formal_label: int, informal_label: int):
         """
         Args:
             model (FormalityModel):
                 The model to use for predictions.
             test_set (datasets.Dataset):
                 The dataset to evaluate on.
+            formal_label (int):
+                Label that indicates a sentence in the dataset is formal.
+            informal_label (int):
+                Label that indicates a sentence in the dataset is informal.
         """
         self.model = model
         self.dataset = test_set  # recommended to use always test set for evaluations
+        self.formal_label = formal_label
+        self.informal_label = informal_label
 
         # obtain references and predictions
         self.references = self.dataset["label"]
@@ -56,7 +63,6 @@ class Evaluator:
             predictions (list[int]):
                 Predicted labels.
         """
-        # TODO: write to file?
         print(classification_report(references, predictions, target_names=["formal", "informal"]))
         return
 
@@ -76,3 +82,21 @@ class Evaluator:
                 if abs(pps["formal"] - pps["informal"]) < uncertainty_threshold
             ]
         raise NotImplementedError("Probability prediction is not implemented for this model type.")
+
+    def write_predictions_to_file(self, filename: str):
+        """
+        Predictions file writer. Current formatting style is limited to that of .csv.
+
+        Args:
+            filename (str):
+                The name of the output file.
+        """
+        sentences = self.dataset["text"]
+        translated_predictions = ["formal" if label == self.formal_label else "informal" for label in self.predictions]
+
+        # csv writer
+        with open(filename, mode="w", newline="", encoding="utf-8") as file:
+            writer = csv.writer(file)
+            writer.writerow(["sentence", "prediction"])  # header
+            for sentence, pred in zip(sentences, translated_predictions):
+                writer.writerow([sentence, pred])

@@ -6,7 +6,7 @@ from formality_eval import RuleBased, EmbeddingsBased, Pretrained
 
 
 def evaluate(model_name: str, dataset_name: str, predict_sample: str,
-             formal_label: int, informal_label: int):
+             formal_label: int, informal_label: int, predictions_to_file: str):
     """
     Evaluate the selected formality detection model on a dataset.
 
@@ -21,6 +21,8 @@ def evaluate(model_name: str, dataset_name: str, predict_sample: str,
             Refer to --formal_label command line argument help.
         informal_label (int):
             Refer to --informal_label command line argument help.
+        predictions_to_file (str):
+            Refer to --predictions_to_file command line argument help.
     """
     # load dataset. Only HF available, set to default
     dataset = DatasetProcessor(data=load_dataset(dataset_name), name=dataset_name, model_name=model_name,
@@ -46,7 +48,10 @@ def evaluate(model_name: str, dataset_name: str, predict_sample: str,
         return
 
     # main call
-    Evaluator(model=model, test_set=dataset.processed_data["test"])
+    e = Evaluator(model=model, test_set=dataset.processed_data["test"],
+              formal_label=formal_label, informal_label=informal_label)
+    if predictions_to_file:
+        e.write_predictions_to_file(filename=predictions_to_file)
 
 
 if __name__ == "__main__":
@@ -81,6 +86,12 @@ if __name__ == "__main__":
         default=1,
         help="The label associated to predicting 'informal'."
     )
+    parser.add_argument(
+        "--predictions_to_file",
+        type=str,
+        help="Name of the file to write model dataset predictions to."
+    )
     args = parser.parse_args()
     evaluate(model_name=args.model, dataset_name=args.dataset, predict_sample=args.predict,
-             formal_label=args.formal_label, informal_label=args.informal_label)
+             formal_label=args.formal_label, informal_label=args.informal_label,
+             predictions_to_file=args.predictions_to_file)

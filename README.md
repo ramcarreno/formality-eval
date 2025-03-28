@@ -12,7 +12,7 @@ git clone https://github.com/ramcarreno/formality-eval.git
 cd formality_eval
 ```
 2. Create your virtual environment of choice and install the following dependencies: `datasets`, `torch`, 
-`transformers`, `scikit-learn`. If you use `venv`, you can simply do this with:
+`transformers`, `scikit-learn`, `fasttext`. If you use `venv`, you can simply do this with:
 ```
 pip install .
 ```
@@ -20,8 +20,9 @@ pip install .
 ## Running the package
 Before directly running the package with `python -m formality_eval`, the following command line arguments may be added:
 
-- `model`:  This is a **required** argument. It can be any of `rule-based`, `embeddings` or the checkpoint name of a 
-HuggingFace pretrained model of the AutoModelForSequenceClassification class.
+- `model`:  This is a **required** argument. It can be any of `rule-based` (naive linguistic baseline), `embeddings` 
+(a simple classifier based on FastText's embeddings) or the checkpoint name of a HuggingFace pretrained model of the 
+AutoModelForSequenceClassification class.
 - `dataset`: A HuggingFace formality dataset. By default it is set to _osyvokon/pavlick-formality-scores_. However, 
 given how diversely structured datasets can be, it is suggested that any other used is processed accordingly in the 
 _dataset.py_ module as well.
@@ -29,10 +30,9 @@ _dataset.py_ module as well.
 classified as **formal** or **informal**.
 - `formal_label` and `informal_label`: In certain cases, one might want to change the labels associated with both
 predictions, as some other models might use {-1,1}, {0,1}, etc. for informal and formal respectively. By default, 
-_formal_label_ is set to 0, and _informal_label_ is set to 1, as it is how the baseline rule-based model encodes 
-both.
-
-More specifics about models and datasets are detailed in the document.
+_formal_label_ is set to 0, and _informal_label_ is set to 1. This how both the baseline rule-based and the embeddings 
+models encode them.
+- `predictions_to_file`: Name of the file where model predictions over a dataset will be stored, if necessary.
 
 ### Example: Classification report
 ```
