@@ -6,4 +6,5 @@ dependencies = ["datasets", "torch", "transformers", "scikit-learn", "fasttext"]
 readme = "README.md"
 license = {text = "GNU AGPLv3"}
 
-
+[tool.setuptools]
+packages = ["formality_eval"]

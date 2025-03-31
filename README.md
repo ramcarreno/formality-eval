@@ -38,6 +38,7 @@ models encode them.
 ```
 python -m formality_eval --model="rule-based"
 ```
+Keep in mind the first time you run it might be slow, since it needs to process the dataset, etc. 
 Assuming the default dataset was used, it should return the following report:
 ```
               precision    recall  f1-score   support
